@@ -18,10 +18,10 @@ export default function Home() {
                             </Grid.Column>
                             <Grid.Column>
 
-                                Bem vindo ao sistema <strong>OxeFood</strong> ! <br />
-                                Este sistema foi desenvolvido na disciplina de Desenvolvimento para WEB IV. <br /> <br />
-                                Para acessar o código da <strong>API</strong> do sistema, acesse: <a href='https://github.com/eniobatalha/oxefood-api-enio' target='_blank' rel="noreferrer"> https://github.com/eniobatalha/oxefood-api-enio </a> <br /> <br />
-                                Para acessar o código do <strong>Módulo WEB</strong>, acesse: <a href='https://github.com/eniobatalha/oxefood-web-enio' target='_blank' rel="noreferrer"> https://github.com/eniobatalha/oxefood-web-enio </a>
+                                Bem vindo ao sistema <strong>Estágio IFPE</strong> ! <br />
+                                Este sistema foi desenvolvido na disciplina de Tópicos Avançados em Engenharia de Software II. <br /> <br />
+                                Para acessar o código da <strong>API</strong> do sistema, acesse: <a href='https://github.com/eniobatalha/estagios-api-ejl' target='_blank' rel="noreferrer"> https://github.com/eniobatalha/estagios-api-ejl' </a> <br /> <br />
+                                Para acessar o código do <strong>Módulo WEB</strong>, acesse: <a href='https://github.com/eniobatalha/estagios-web-ejl' target='_blank' rel="noreferrer"> https://github.com/eniobatalha/estagios-web-ejl </a>
 
                             </Grid.Column>
                         </Grid.Row>

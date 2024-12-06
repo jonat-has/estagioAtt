@@ -16,46 +16,47 @@ export default function MenuSistema(props) {
                 />
 
                 <Menu.Item
-                    name='cliente'
-                    active={props.tela === 'cliente'}
+                    name='estudantes'
+                    active={props.tela === 'estudantes'}
                     as={Link}
-                    to='/list-cliente'
+                    to='/list-estudantes'
                 />
 
                 <Menu.Item
-                    name='categoria'
-                    active={props.tela === 'categoria'}
+                    name='orientadores'
+                    active={props.tela === 'orientadores'}
                     as={Link}
-                    to='/list-categoriaproduto'
+                    to='/list-orientadores'
                 />
 
                 <Menu.Item
-                    name='produto'
-                    active={props.tela === 'produto'}
+                    name='agentes'
+                    active={props.tela === 'agentes'}
                     as={Link}
-                    to='/list-produto'
+                    to='/list-agentes'
                 />
 
                 <Menu.Item
-                    name='entregador'
-                    active={props.tela === 'entregador'}
+                    name='empresas'
+                    active={props.tela === 'empresas'}
                     as={Link}
-                    to='/list-entregador'
+                    to='/list-empresas'
                 />
 
                 <Menu.Item
-                    name='fornecedor'
-                    active={props.tela === 'fornecedor'}
+                    name='estagios'
+                    active={props.tela === 'estagios'}
                     as={Link}
-                    to='/list-fornecedor'
+                    to='/list-estagios'
                 />
 
                 <Menu.Item
-                    name='promocao'
-                    active={props.tela === 'promocao'}
+                    name='sobre'
+                    active={props.tela === 'sobre'}
                     as={Link}
-                    to='/list-promocao'
+                    to='/sobre'
                 />
+
 
             </Menu>
         </>
