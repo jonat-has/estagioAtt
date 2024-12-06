@@ -12,7 +12,7 @@ function App() {
 
       <div style={{marginTop: '6%'}}>
         <Segment vertical color='grey' size='tiny' textAlign='center'>
-          &copy; 2024 - Projeto Web IV - IFPE Jaboatão dos Guararapes
+          &copy; 2024 - Projeto TA em Eng de Soft II - IFPE Jaboatão dos Guararapes - Enio Batalha, Jonathas Gabriel e Lucas Emanuel
         </Segment>
       </div>
 
