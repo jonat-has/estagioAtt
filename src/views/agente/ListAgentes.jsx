@@ -1,29 +1,18 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Container, Divider, Header, Icon, Modal, Table } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
-import { notifyError, notifySuccess } from "../util/Util";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function ListAgentes() {
-  const [lista, setLista] = useState([]);
+  
   const [openModal, setOpenModal] = useState(false);
   const [idRemover, setIdRemover] = useState();
 
-  useEffect(() => {
-    carregarLista();
-  }, []);
-
-  function carregarLista() {
-    axios
-      .get("http://localhost:8080/api/agentes-integracao")
-      .then((response) => {
-        setLista(response.data);
-      })
-      .catch((error) => {
-        console.error("Erro ao carregar a lista de agentes de integração:", error);
-      });
-  }
+  const getAgente = useQuery(api.agente.get)
+  const removeAgente = useMutation(api.agente.remove)
 
   function confirmaRemover(id) {
     setOpenModal(true);
@@ -31,20 +20,10 @@ export default function ListAgentes() {
   }
 
   async function remover() {
-    await axios
-      .delete("http://localhost:8080/api/agentes-integracao/" + idRemover)
-      .then(() => {
-        notifySuccess("Agente de integração removido com sucesso.");
-        carregarLista(); // Recarrega a lista após a exclusão
-      })
-      .catch((error) => {
-        if (error.response) {
-          notifyError(error.response.data.message);
-        } else {
-          notifyError("Erro ao remover o agente de integração.");
-        }
-      });
-    setOpenModal(false);
+    setOpenModal(false)
+    await removeAgente({
+      id: idRemover
+    })
   }
 
   return (
@@ -80,8 +59,8 @@ export default function ListAgentes() {
               </Table.Header>
 
               <Table.Body>
-                {lista.map((agente) => (
-                  <Table.Row key={agente.id}>
+                {getAgente?.map((agente) => (
+                  <Table.Row key={agente._id}>
                     <Table.Cell>{agente.nome}</Table.Cell>
                     <Table.Cell>{agente.contato}</Table.Cell>
                     <Table.Cell textAlign="center">
@@ -94,7 +73,7 @@ export default function ListAgentes() {
                       >
                         <Link
                           to="/form-agentes"
-                          state={{ id: agente.id }}
+                          state={ agente }
                           style={{ color: "green" }}
                         >
                           <Icon name="edit" />
@@ -107,7 +86,7 @@ export default function ListAgentes() {
                         color="red"
                         title="Clique aqui para remover este agente"
                         icon
-                        onClick={() => confirmaRemover(agente.id)}
+                        onClick={() => confirmaRemover(agente._id)}
                       >
                         <Icon name="trash" />
                       </Button>

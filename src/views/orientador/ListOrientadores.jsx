@@ -1,28 +1,19 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Container, Divider, Header, Icon, Modal, Table } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function ListOrientadores() {
-  const [lista, setLista] = useState([]);
+
   const [openModal, setOpenModal] = useState(false);
   const [idRemover, setIdRemover] = useState();
 
-  useEffect(() => {
-    carregarLista();
-  }, []);
+  const getOrientador = useQuery(api.orientador.get)
+  const removeOrientador = useMutation(api.orientador.remove)
 
-  function carregarLista() {
-    axios
-      .get("http://localhost:8080/api/orientadores")
-      .then((response) => {
-        setLista(response.data);
-      })
-      .catch((error) => {
-        console.error("Erro ao carregar a lista de orientadores:", error);
-      });
-  }
 
   function confirmaRemover(id) {
     setOpenModal(true);
@@ -30,17 +21,10 @@ export default function ListOrientadores() {
   }
 
   async function remover() {
-    await axios
-      .delete("http://localhost:8080/api/orientadores/" + idRemover)
-      .then(() => {
-        setOpenModal(false);
-        console.log("Orientador removido com sucesso.");
-        carregarLista(); // Recarrega a lista após a exclusão
-      })
-      .catch((error) => {
-        setOpenModal(false);
-        console.error("Erro ao remover o orientador:", error);
-      });
+    setOpenModal(false)
+    await removeOrientador({
+      id: idRemover
+    })
   }
 
   return (
@@ -79,12 +63,12 @@ export default function ListOrientadores() {
               </Table.Header>
 
               <Table.Body>
-                {lista.length > 0 &&
-                  lista.map((orientador) => (
-                    <Table.Row key={orientador.id}>
+                {getOrientador?.map((orientador) => (
+                    <Table.Row key={orientador._id}>
                       <Table.Cell>{orientador.nome}</Table.Cell>
                       <Table.Cell>{orientador.departamento}</Table.Cell>
-                      <Table.Cell textAlign="center">
+                      <Table.Cell textAlign="center" >
+                      <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
                         <Button
                           inverted
                           circular
@@ -94,23 +78,24 @@ export default function ListOrientadores() {
                         >
                           <Link
                             to="/form-orientadores"
-                            state={{ id: orientador.id }}
+                            state={orientador}
                             style={{ color: "green" }}
                           >
                             <Icon name="edit" />
                           </Link>
-                        </Button>{" "}
-                        &nbsp;
+                        </Button>
                         <Button
                           inverted
                           circular
                           color="red"
                           title="Clique aqui para remover este orientador"
                           icon
-                          onClick={() => confirmaRemover(orientador.id)}
+                          onClick={() => confirmaRemover(orientador._id)}
                         >
                           <Icon name="trash" />
                         </Button>
+                      </div>
+
                       </Table.Cell>
                     </Table.Row>
                   ))}

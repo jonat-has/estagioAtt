@@ -1,14 +1,24 @@
-import axios from "axios";
+
 import { React, useEffect, useState } from "react";
 import { Button, Container, Divider, Form, Icon } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { notifyError, notifySuccess } from "../util/Util";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function FormEstagios() {
   const { state } = useLocation();
 
-  const [idEstagio, setIdEstagio] = useState();
+  const getEstudantes = useQuery(api.estudante.getEstudantes);
+  const getOrientadores = useQuery(api.orientador.get);
+  const getEmpresas = useQuery(api.empresa.get);
+  const getAgentes = useQuery(api.agente.get);
+
+  const createEstagio = useMutation(api.estagio.create);
+  const updateEstagio = useMutation(api.estagio.update)
+
+  const [idEstagio, setIdEstagio] = useState(null);
   const [descricao, setDescricao] = useState("");
   const [ativo, setAtivo] = useState(true); // Configurando 'ativo' como true por padrão
   const [idEstudante, setIdEstudante] = useState();
@@ -16,109 +26,70 @@ export default function FormEstagios() {
   const [idEmpresa, setIdEmpresa] = useState();
   const [idAgente, setIdAgente] = useState();
 
-  const [listaEstudantes, setListaEstudantes] = useState([]);
-  const [listaOrientadores, setListaOrientadores] = useState([]);
-  const [listaEmpresas, setListaEmpresas] = useState([]);
-  const [listaAgentes, setListaAgentes] = useState([]);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (state != null && state.id != null) {
-      axios
-        .get("http://localhost:8080/api/estagios/" + state.id)
-        .then((response) => {
-          setIdEstagio(response.data.id);
-          setDescricao(response.data.descricao);
-          setAtivo(response.data.ativo);
-          setIdEstudante(response.data.estudante?.id);
-          setIdOrientador(response.data.orientador?.id);
-          setIdEmpresa(response.data.empresaConcedente?.id);
-          setIdAgente(response.data.agenteIntegracao?.id);
-        })
-        .catch(() => {
-          notifyError("Erro ao carregar os dados do estágio.");
-        });
+   if (state !== null) {
+      setIdEstagio(state._id);
+      setDescricao(state.descricao);
+      setIdEstudante(state.estudante);
+      setIdOrientador(state.orientador);
+      setIdEmpresa(state.empresa);
+      setIdAgente(state.agente)
+      console.log(state)
     }
 
-    // Carregar listas suspensas
-    carregarListas();
-  }, [state]);
+  }, [getAgentes, getEmpresas, getEstudantes, getOrientadores, state]);
 
-  function carregarListas() {
-    axios.get("http://localhost:8080/api/estudantes").then((response) => {
-      const estudantes = response.data.map((e) => ({
-        text: `${e.id} - ${e.nome}`,
-        value: e.id,
-      }));
-      setListaEstudantes(estudantes);
-    });
+ 
+  async function salvar() {
+    if (idEstagio !== null) {
+      // Alteração:
+      await updateEstagio({
+        id: idEstagio,
+        estudante: idEstudante,
+        orientador: idOrientador,
+        empresa: idEmpresa,
+        agente: idAgente,
+        descricao: descricao,
+        ativo: ativo
 
-    axios.get("http://localhost:8080/api/orientadores").then((response) => {
-      const orientadores = response.data.map((o) => ({
-        text: `${o.id} - ${o.nome}`,
-        value: o.id,
-      }));
-      setListaOrientadores(orientadores);
-    });
-
-    axios.get("http://localhost:8080/api/empresas-concedentes").then((response) => {
-      const empresas = response.data.map((e) => ({
-        text: `${e.id} - ${e.nome}`,
-        value: e.id,
-      }));
-      setListaEmpresas(empresas);
-    });
-
-    axios.get("http://localhost:8080/api/agentes-integracao").then((response) => {
-      const agentes = response.data.map((a) => ({
-        text: `${a.id} - ${a.nome}`,
-        value: a.id,
-      }));
-      setListaAgentes(agentes);
-    });
-  }
-
-  function salvar() {
-    let estagioRequest = {
-      descricao: descricao,
-      ativo: ativo,
-      idEstudante: idEstudante,
-      idOrientador: idOrientador,
-      idEmpresaConcedente: idEmpresa,
-      idAgenteIntegracao: idAgente,
-    };
-
-    if (idEstagio != null) {
-      // Alteração
-      axios
-        .put("http://localhost:8080/api/estagios/" + idEstagio, estagioRequest)
-        .then(() => {
-          notifySuccess("Estágio alterado com sucesso.");
-          navigate(`/list-estagios`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao alterar o estágio.");
-          }
-        });
+      }).then((response) => {
+        notifySuccess("Estagio alterado com sucesso.");
+        navigate(`/list-estagios`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+          console.log(error)
+        } else {
+          notifyError("Erro ao alterar o Estagio.");
+        }
+      });
     } else {
-      // Cadastro
-      axios
-        .post("http://localhost:8080/api/estagios", estagioRequest)
-        .then(() => {
-          notifySuccess("Estágio cadastrado com sucesso.");
-          navigate(`/list-estagios`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao cadastrar o estágio.");
-          }
-        });
+      // Cadastro:
+
+      await createEstagio({
+        estudante: idEstudante,
+        orientador: idOrientador,
+        empresa: idEmpresa,
+        agente: idAgente,
+        descricao: descricao,
+        ativo: ativo
+      })
+      .then((response) => {
+        notifySuccess("Estagio cadastrado com sucesso.");
+        console.log(response)
+        navigate(`/list-estagios`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+        } else {
+          notifyError("Erro ao cadastrar o estagio.");
+        }
+      })
     }
   }
 
@@ -179,17 +150,23 @@ export default function FormEstagios() {
                   fluid
                   label="Estudante"
                   placeholder="Selecione um estudante"
-                  options={listaEstudantes}
+                  options={getEstudantes?.map((estudante) => ({
+                    text: estudante.nome,
+                    value: estudante._id, 
+                  }))}
                   value={idEstudante}
                   onChange={(e, { value }) => setIdEstudante(value)}
                 />
 
-                <Form.Select
+              <Form.Select
                   required
                   fluid
                   label="Orientador"
                   placeholder="Selecione um orientador"
-                  options={listaOrientadores}
+                  options={getOrientadores?.map((orientador) => ({
+                    text: orientador.nome,
+                    value: orientador._id,
+                  }))}
                   value={idOrientador}
                   onChange={(e, { value }) => setIdOrientador(value)}
                 />
@@ -201,7 +178,10 @@ export default function FormEstagios() {
                   fluid
                   label="Empresa Concedente"
                   placeholder="Selecione uma empresa"
-                  options={listaEmpresas}
+                  options={getEmpresas?.map((empresa) => ({
+                    text: empresa.nome,
+                    value: empresa._id,
+                  }))}
                   value={idEmpresa}
                   onChange={(e, { value }) => setIdEmpresa(value)}
                 />
@@ -210,7 +190,10 @@ export default function FormEstagios() {
                   fluid
                   label="Agente de Integração"
                   placeholder="Selecione um agente"
-                  options={listaAgentes}
+                  options={getAgentes?.map((agente) => ({
+                    text: agente.nome,
+                    value: agente._id
+                  }))}
                   value={idAgente}
                   onChange={(e, { value }) => setIdAgente(value)}
                 />

@@ -4,13 +4,18 @@ import { BrowserRouter } from "react-router-dom";
 import 'semantic-ui-css/semantic.min.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+import { ConvexProvider, ConvexReactClient } from "convex/react";
+
+const convex = new ConvexReactClient("https://rugged-dragon-733.convex.cloud");
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
+    <ConvexProvider client={convex}>
     <BrowserRouter>
       <App />
     </BrowserRouter>
+    </ConvexProvider>
   </React.StrictMode>
 );
 

@@ -1,79 +1,83 @@
-import axios from "axios";
+
 import { React, useEffect, useState } from "react";
 import InputMask from "react-input-mask";
 import { Button, Container, Divider, Form, Icon } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { notifyError, notifySuccess } from "../util/Util";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function FormEmpresas() {
+  const { state } = useLocation();
+
+  const createEmpresa = useMutation(api.empresa.create);
+  const updateEmpresa = useMutation(api.empresa.update);
+
+  const [idEmpresa, setIdEmpresa] = useState(null);
+
   const [nome, setNome] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [endereco, setEndereco] = useState("");
   const [email, setEmail] = useState("");
   const [telefone, setTelefone] = useState("");
-  const { state } = useLocation();
-  const [idEmpresa, setIdEmpresa] = useState();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (state != null && state.id != null) {
-      axios
-        .get("http://localhost:8080/api/empresas-concedentes/" + state.id)
-        .then((response) => {
-          setIdEmpresa(response.data.id);
-          setNome(response.data.nome);
-          setCnpj(response.data.cnpj);
-          setEndereco(response.data.endereco);
-          setEmail(response.data.email);
-          setTelefone(response.data.telefone);
-        })
-        .catch(() => {
-          notifyError("Erro ao carregar os dados da empresa.");
-        });
+    if (state !== null) {
+      setIdEmpresa(state._id);
+      setNome(state.nome);
+      setCnpj(state.cnpj);
+      setEndereco(state.endereco);
+      setEmail(state.email);
+      setTelefone(state.telefone)
     }
   }, [state]);
 
-  function salvar() {
-    let empresaRequest = {
-      nome: nome,
-      cnpj: cnpj,
-      endereco: endereco,
-      email: email,
-      telefone: telefone,
-    };
+  async function salvar() {
+    if (idEmpresa !== null) {
+      // Alteração:
+      await updateEmpresa({
+        id: idEmpresa,
+        nome: nome,
+        cnpj: cnpj,
+        endereco: endereco,
+        email: email,
+        telefone: telefone
 
-    if (idEmpresa != null) {
-      // Alteração
-      axios
-        .put("http://localhost:8080/api/empresas-concedentes/" + idEmpresa, empresaRequest)
-        .then(() => {
-          notifySuccess("Empresa concedente alterada com sucesso.");
-          navigate(`/list-empresas`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao alterar a empresa concedente.");
-          }
-        });
+      }).then((response) => {
+        notifySuccess("empresa alterado com sucesso.");
+        navigate(`/list-empresas`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+        } else {
+          notifyError("Erro ao alterar o empresa.");
+        }
+      });
     } else {
-      // Cadastro
-      axios
-        .post("http://localhost:8080/api/empresas-concedentes", empresaRequest)
-        .then(() => {
-          notifySuccess("Empresa concedente cadastrada com sucesso.");
-          navigate(`/list-empresas`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao cadastrar a empresa concedente.");
-          }
-        });
+      // Cadastro:
+
+      await createEmpresa({
+        nome: nome,
+        cnpj: cnpj,
+        endereco: endereco,
+        email: email,
+        telefone: telefone
+      })
+      .then((response) => {
+        notifySuccess("empresa cadastrado com sucesso.");
+        navigate(`/list-empresas`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+        } else {
+          notifyError("Erro ao cadastrar o empresa.");
+        }
+      })
     }
   }
 
@@ -83,7 +87,7 @@ export default function FormEmpresas() {
 
       <div style={{ marginTop: "3%" }}>
         <Container textAlign="justified">
-          {idEmpresa === undefined && (
+          {idEmpresa === null && (
             <h2>
               <span style={{ color: "darkgray" }}>
                 Empresa Concedente &nbsp;
@@ -92,7 +96,7 @@ export default function FormEmpresas() {
               Cadastro
             </h2>
           )}
-          {idEmpresa !== undefined && (
+          {idEmpresa !== null && (
             <h2>
               <span style={{ color: "darkgray" }}>
                 Empresa Concedente &nbsp;

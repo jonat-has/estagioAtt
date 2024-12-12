@@ -1,29 +1,20 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Container, Divider, Header, Icon, Modal, Table } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
-import { notifyError, notifySuccess } from "../util/Util";
+
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function ListEmpresas() {
-  const [lista, setLista] = useState([]);
+
   const [openModal, setOpenModal] = useState(false);
   const [idRemover, setIdRemover] = useState();
 
-  useEffect(() => {
-    carregarLista();
-  }, []);
+  const getEmpresa = useQuery(api.empresa.get)
+  const removeEmpresa = useMutation(api.empresa.remove)
 
-  function carregarLista() {
-    axios
-      .get("http://localhost:8080/api/empresas-concedentes")
-      .then((response) => {
-        setLista(response.data);
-      })
-      .catch((error) => {
-        notifyError("Erro ao carregar a lista de empresas.");
-      });
-  }
 
   function confirmaRemover(id) {
     setOpenModal(true);
@@ -31,22 +22,12 @@ export default function ListEmpresas() {
   }
 
   async function remover() {
-    await axios
-      .delete("http://localhost:8080/api/empresas-concedentes/" + idRemover)
-      .then(() => {
-        notifySuccess("Empresa concedente removida com sucesso.");
-        carregarLista(); // Recarrega a lista após exclusão
-      })
-      .catch((error) => {
-        if (error.response) {
-          notifyError(error.response.data.message);
-        } else {
-          notifyError("Erro ao remover a empresa concedente.");
-        }
-      });
-    setOpenModal(false);
+    setOpenModal(false)
+    await removeEmpresa({
+      id: idRemover
+    })
   }
-
+  
   return (
     <div>
       <MenuSistema tela={"empresas"} />
@@ -83,8 +64,8 @@ export default function ListEmpresas() {
               </Table.Header>
 
               <Table.Body>
-                {lista.map((empresa) => (
-                  <Table.Row key={empresa.id}>
+                {getEmpresa?.map((empresa) => (
+                  <Table.Row key={empresa._id}>
                     <Table.Cell>{empresa.nome}</Table.Cell>
                     <Table.Cell>{empresa.cnpj}</Table.Cell>
                     <Table.Cell>{empresa.endereco}</Table.Cell>
@@ -100,7 +81,7 @@ export default function ListEmpresas() {
                       >
                         <Link
                           to="/form-empresas"
-                          state={{ id: empresa.id }}
+                          state={ empresa }
                           style={{ color: "green" }}
                         >
                           <Icon name="edit" />
@@ -113,7 +94,7 @@ export default function ListEmpresas() {
                         color="red"
                         title="Clique aqui para remover esta empresa"
                         icon
-                        onClick={() => confirmaRemover(empresa.id)}
+                        onClick={() => confirmaRemover(empresa._id)}
                       >
                         <Icon name="trash" />
                       </Button>

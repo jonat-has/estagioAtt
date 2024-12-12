@@ -1,45 +1,45 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Button, Container, Divider, Form, Header, Icon, Menu, Modal, Segment, Table } from "semantic-ui-react";
+import {
+  Button,
+  Container,
+  Divider,
+  Form,
+  Header,
+  Icon,
+  Menu,
+  Modal,
+  Segment,
+  Table,
+} from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
-import { notifyError, notifySuccess } from "../util/Util";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function ListEstagios() {
-  const [listaEstagios, setListaEstagios] = useState([]);
+  const getEstagios = useQuery(api.estagio.get);
+  const removeEstagios = useMutation(api.estagio.remove);
+
   const [openModal, setOpenModal] = useState(false);
   const [idRemover, setIdRemover] = useState();
-  const [menuFiltro, setMenuFiltro] = useState(false);
   const [descricao, setDescricao] = useState("");
   const [idEstudante, setIdEstudante] = useState("");
-  const [listaEstudantes, setListaEstudantes] = useState([]);
+  const [menuFiltro, setMenuFiltro] = useState(false);
 
   useEffect(() => {
-    carregarLista();
-  }, []);
+    console.log(getEstagios);
+  });
 
-  function carregarLista() {
-    axios
-      .get("http://localhost:8080/api/estagios")
-      .then((response) => {
-        setListaEstagios(response.data);
-      })
-      .catch((error) => {
-        notifyError("Erro ao carregar a lista de estágios.");
-      });
+  function handleMenuFiltro() {
+    setMenuFiltro(!menuFiltro);
+  }
 
-    axios
-      .get("http://localhost:8080/api/estudantes")
-      .then((response) => {
-        const dropDownEstudantes = [{ text: "", value: "" }];
-        response.data.map((e) =>
-          dropDownEstudantes.push({ text: e.nome, value: e.id })
-        );
-        setListaEstudantes(dropDownEstudantes);
-      })
-      .catch((error) => {
-        notifyError("Erro ao carregar a lista de estudantes.");
-      });
+  function handleChangeDescricao(value) {
+    setDescricao(value);
+  }
+
+  function handleChangeEstudante(value) {
+    setIdEstudante(value);
   }
 
   function confirmaRemover(id) {
@@ -48,55 +48,24 @@ export default function ListEstagios() {
   }
 
   async function remover() {
-    await axios
-      .delete("http://localhost:8080/api/estagios/" + idRemover)
-      .then(() => {
-        notifySuccess("Estágio removido com sucesso.");
-        carregarLista();
-      })
-      .catch((error) => {
-        if (error.response) {
-          notifyError(error.response.data.message);
-        } else {
-          notifyError("Erro ao remover o estágio.");
-        }
-      });
     setOpenModal(false);
+    removeEstagios({ id: idRemover });
   }
 
-  function handleMenuFiltro() {
-    setMenuFiltro(!menuFiltro);
+  function filtrarEstagios(estagios) {
+    return estagios.filter((e) => {
+      const matchesDescricao = e.descricao
+        ?.toLowerCase()
+        .includes(descricao.toLowerCase());
+      const matchesEstudante = idEstudante
+        ? e.estudante_nome?.toLowerCase().includes(idEstudante.toLowerCase())
+        : true;
+  
+      return matchesDescricao && matchesEstudante;
+    });
   }
+  
 
-  function handleChangeDescricao(value) {
-    filtrarEstagios(value, idEstudante);
-  }
-
-  function handleChangeEstudante(value) {
-    filtrarEstagios(descricao, value);
-  }
-
-  async function filtrarEstagios(descricaoParam, idEstudanteParam) {
-    let formData = new FormData();
-
-    if (descricaoParam !== undefined) {
-      setDescricao(descricaoParam);
-      formData.append("descricao", descricaoParam);
-    }
-    if (idEstudanteParam !== undefined) {
-      setIdEstudante(idEstudanteParam);
-      formData.append("idEstudante", idEstudanteParam);
-    }
-
-    await axios
-      .post("http://localhost:8080/api/estagios/filtrar", formData)
-      .then((response) => {
-        setListaEstagios(response.data);
-      })
-      .catch((error) => {
-        notifyError("Erro ao filtrar os estágios.");
-      });
-  }
 
   return (
     <div>
@@ -142,12 +111,14 @@ export default function ListEstagios() {
                     width={6}
                   />
 
-                  <Form.Select
-                    placeholder="Filtrar por Estudante"
-                    label="Estudante"
-                    options={listaEstudantes}
+                  <Form.Input
+                    icon="search"
                     value={idEstudante}
-                    onChange={(e, { value }) => handleChangeEstudante(value)}
+                    onChange={(e) => handleChangeEstudante(e.target.value)}
+                    label="Estudante"
+                    placeholder="Filtrar por nome do estudante"
+                    labelPosition="left"
+                    width={6}
                   />
                 </Form>
               </Segment>
@@ -166,6 +137,7 @@ export default function ListEstagios() {
                   <Table.HeaderCell>Orientador</Table.HeaderCell>
                   <Table.HeaderCell>Empresa</Table.HeaderCell>
                   <Table.HeaderCell>Agente de Integração</Table.HeaderCell>
+                  <Table.HeaderCell>Ativo</Table.HeaderCell>
                   <Table.HeaderCell textAlign="center" width={2}>
                     Ações
                   </Table.HeaderCell>
@@ -173,43 +145,43 @@ export default function ListEstagios() {
               </Table.Header>
 
               <Table.Body>
-                {listaEstagios.map((e) => (
-                  <Table.Row key={e.id}>
-                    <Table.Cell>{e.descricao}</Table.Cell>
-                    <Table.Cell>{e.estudante?.nome || "N/A"}</Table.Cell>
-                    <Table.Cell>{e.orientador?.nome || "N/A"}</Table.Cell>
-                    <Table.Cell>{e.empresaConcedente?.nome || "N/A"}</Table.Cell>
-                    <Table.Cell>
-                      {e.agenteIntegracao?.nome || "N/A"}
-                    </Table.Cell>
-                    <Table.Cell textAlign="center">
-                      <Button
-                        inverted
-                        circular
-                        color="green"
-                        title="Clique aqui para editar os dados deste estágio"
-                        icon
-                      >
-                        <Link
-                          to="/form-estagios"
-                          state={{ id: e.id }}
-                          style={{ color: "green" }}
+                {getEstagios &&
+                  filtrarEstagios(getEstagios).map((e) => (
+                    <Table.Row key={e.id}>
+                      <Table.Cell>{e.descricao}</Table.Cell>
+                      <Table.Cell>{e.estudante_nome || "N/A"}</Table.Cell>
+                      <Table.Cell>{e.orientador_nome || "N/A"}</Table.Cell>
+                      <Table.Cell>{e.empresa_nome || "N/A"}</Table.Cell>
+                      <Table.Cell>{e.agente_nome || "N/A"}</Table.Cell>
+                      <Table.Cell>{e.ativo ? "Ativo" : "Inativo"}</Table.Cell>
+                      <Table.Cell textAlign="center">
+                        <Button
+                          inverted
+                          circular
+                          color="green"
+                          title="Clique aqui para editar os dados deste estágio"
+                          icon
                         >
-                          <Icon name="edit" />
-                        </Link>
-                      </Button>{" "}
-                      &nbsp;
-                      <Button
-                        inverted
-                        circular
-                        icon="trash"
-                        color="red"
-                        title="Clique aqui para remover este estágio"
-                        onClick={() => confirmaRemover(e.id)}
-                      />
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
+                          <Link
+                            to="/form-estagios"
+                            state={ e }
+                            style={{ color: "green" }}
+                          >
+                            <Icon name="edit" />
+                          </Link>
+                        </Button>{" "}
+                        &nbsp;
+                        <Button
+                          inverted
+                          circular
+                          icon="trash"
+                          color="red"
+                          title="Clique aqui para remover este estágio"
+                          onClick={() => confirmaRemover(e._id)}
+                        />
+                      </Table.Cell>
+                    </Table.Row>
+                  ))}
               </Table.Body>
             </Table>
           </div>
@@ -229,7 +201,12 @@ export default function ListEstagios() {
           </div>
         </Header>
         <Modal.Actions>
-          <Button basic color="red" inverted onClick={() => setOpenModal(false)}>
+          <Button
+            basic
+            color="red"
+            inverted
+            onClick={() => setOpenModal(false)}
+          >
             <Icon name="remove" /> Não
           </Button>
           <Button color="green" inverted onClick={() => remover()}>

@@ -1,29 +1,18 @@
-import axios from "axios";
-import React, { useEffect, useState } from "react";
+
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button, Container, Divider, Header, Icon, Modal, Table } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
-import { notifyError, notifySuccess } from "../util/Util";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function ListEstudantes() {
-  const [lista, setLista] = useState([]);
+
   const [openModal, setOpenModal] = useState(false);
   const [idRemover, setIdRemover] = useState();
 
-  useEffect(() => {
-    carregarLista();
-  }, []);
-
-  function carregarLista() {
-    axios
-      .get("http://localhost:8080/api/estudantes")
-      .then((response) => {
-        setLista(response.data);
-      })
-      .catch((error) => {
-        notifyError("Erro ao carregar a lista de estudantes.");
-      });
-  }
+  const getEstudantes = useQuery(api.estudante.getEstudantes)
+  const removeEstudante = useMutation(api.estudante.removeEstudante)
 
   function confirmaRemover(id) {
     setOpenModal(true);
@@ -31,20 +20,10 @@ export default function ListEstudantes() {
   }
 
   async function remover() {
-    await axios
-      .delete("http://localhost:8080/api/estudantes/" + idRemover)
-      .then(() => {
-        notifySuccess("Estudante removido com sucesso.");
-        carregarLista(); // Recarregar a lista após a exclusão
-      })
-      .catch((error) => {
-        if (error.response) {
-          notifyError(error.response.data.message);
-        } else {
-          notifyError("Erro ao remover o estudante.");
-        }
-      });
-    setOpenModal(false);
+    setOpenModal(false)
+    await removeEstudante({
+      id: idRemover
+    })
   }
 
   return (
@@ -78,11 +57,11 @@ export default function ListEstudantes() {
                   <Table.HeaderCell>Curso</Table.HeaderCell>
                   <Table.HeaderCell textAlign="center">Ações</Table.HeaderCell>
                 </Table.Row>
-              </Table.Header>
+              </Table.Header> 
 
               <Table.Body>
-                {lista.map((estudante) => (
-                  <Table.Row key={estudante.id}>
+                {getEstudantes?.map((estudante) => (
+                  <Table.Row key={estudante._id}>
                     <Table.Cell>{estudante.nome}</Table.Cell>
                     <Table.Cell>{estudante.matricula}</Table.Cell>
                     <Table.Cell>{estudante.curso}</Table.Cell>
@@ -96,7 +75,7 @@ export default function ListEstudantes() {
                       >
                         <Link
                           to="/form-estudantes"
-                          state={{ id: estudante.id }}
+                          state={ estudante }
                           style={{ color: "green" }}
                         >
                           <Icon name="edit" />
@@ -109,7 +88,7 @@ export default function ListEstudantes() {
                         color="red"
                         title="Clique aqui para remover este estudante"
                         icon
-                        onClick={() => confirmaRemover(estudante.id)}
+                        onClick={() => confirmaRemover(estudante._id)}
                       >
                         <Icon name="trash" />
                       </Button>

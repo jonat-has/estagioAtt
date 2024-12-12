@@ -1,69 +1,71 @@
-import axios from "axios";
+
 import { React, useEffect, useState } from "react";
 import { Button, Container, Divider, Form, Icon } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { notifyError, notifySuccess } from "../util/Util";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function FormAgentes() {
+  const { state } = useLocation();
+
+  const createAgente = useMutation(api.agente.create);
+  const updateAgente = useMutation(api.agente.update);
+
+  const [idAgente, setIdAgente] = useState(null);
+
   const [nome, setNome] = useState("");
   const [contato, setContato] = useState("");
-  const { state } = useLocation();
-  const [idAgente, setIdAgente] = useState();
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (state != null && state.id != null) {
-      axios
-        .get("http://localhost:8080/api/agentes-integracao/" + state.id)
-        .then((response) => {
-          setIdAgente(response.data.id);
-          setNome(response.data.nome);
-          setContato(response.data.contato);
-        })
-        .catch((error) => {
-          notifyError("Erro ao carregar os dados do agente de integração.");
-        });
+    if (state !== null) {
+      setIdAgente(state._id);
+      setNome(state.nome);
+      setContato(state.contato);
     }
   }, [state]);
 
-  function salvar() {
-    let agenteRequest = {
-      nome: nome,
-      contato: contato,
-    };
 
-    if (idAgente != null) {
-      // Alteração
-      axios
-        .put("http://localhost:8080/api/agentes-integracao/" + idAgente, agenteRequest)
-        .then(() => {
-          notifySuccess("Agente de integração alterado com sucesso.");
-          navigate(`/list-agentes`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao alterar o agente de integração.");
-          }
-        });
+  async function salvar() {
+    if (idAgente !== null) {
+      // Alteração:
+      await updateAgente({
+        id: idAgente,
+        nome: nome,
+        contato: contato
+
+      }).then((response) => {
+        notifySuccess("agente alterado com sucesso.");
+        navigate(`/list-agentes`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+        } else {
+          notifyError("Erro ao alterar o agente.");
+        }
+      });
     } else {
-      // Cadastro
-      axios
-        .post("http://localhost:8080/api/agentes-integracao", agenteRequest)
-        .then(() => {
-          notifySuccess("Agente de integração cadastrado com sucesso.");
-          navigate(`/list-agentes`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao cadastrar o agente de integração.");
-          }
-        });
+      // Cadastro:
+
+      await createAgente({
+        nome: nome,
+        contato: contato
+      })
+      .then((response) => {
+        notifySuccess("agente cadastrado com sucesso.");
+        navigate(`/list-agentes`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+        } else {
+          notifyError("Erro ao cadastrar o agente.");
+        }
+      })
     }
   }
 
@@ -73,7 +75,7 @@ export default function FormAgentes() {
 
       <div style={{ marginTop: "3%" }}>
         <Container textAlign="justified">
-          {idAgente === undefined && (
+          {idAgente === null && (
             <h2>
               <span style={{ color: "darkgray" }}>
                 Agente de Integração &nbsp;
@@ -82,7 +84,7 @@ export default function FormAgentes() {
               Cadastro
             </h2>
           )}
-          {idAgente !== undefined && (
+          {idAgente !== null && (
             <h2>
               <span style={{ color: "darkgray" }}>
                 Agente de Integração &nbsp;

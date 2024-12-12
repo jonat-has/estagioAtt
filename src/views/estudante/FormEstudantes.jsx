@@ -1,14 +1,19 @@
-import axios from "axios";
 import React, { useEffect, useState } from "react";
-import InputMask from "react-input-mask";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button, Container, Divider, Form, Icon } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
 import { notifyError, notifySuccess } from "../util/Util";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
+
 
 export default function FormEstudantes() {
   const { state } = useLocation();
-  const [idEstudante, setIdEstudante] = useState();
+
+  const createEstudante = useMutation(api.estudante.createEstudante);
+  const updateEstudante = useMutation(api.estudante.updateEstudante);
+
+  const [idEstudante, setIdEstudante] = useState(null);
 
   const [nome, setNome] = useState("");
   const [matricula, setMatricula] = useState("");
@@ -17,59 +22,57 @@ export default function FormEstudantes() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (state != null && state.id != null) {
-      axios
-        .get("http://localhost:8080/api/estudantes/" + state.id)
-        .then((response) => {
-          setIdEstudante(response.data.id);
-          setNome(response.data.nome);
-          setMatricula(response.data.matricula);
-          setCurso(response.data.curso);
-        })
-        .catch((error) => {
-          notifyError("Erro ao carregar os dados do estudante.");
-        });
-    }
+
+    if (state !== null) {
+
+          setIdEstudante(state._id);
+          setNome(state.nome);
+          setCurso(state.curso);
+          setMatricula(state.matricula);
+      }
+      
   }, [state]);
 
-  function salvar() {
-    let estudanteRequest = {
-      nome: nome,
-      matricula: matricula,
-      curso: curso,
-    };
-
-    if (idEstudante != null) {
+  async function salvar() {
+   if (idEstudante !== null) {
       // Alteração:
-      axios
-        .patch("http://localhost:8080/api/estudantes/" + idEstudante, estudanteRequest)
-        .then((response) => {
-          notifySuccess("Estudante alterado com sucesso.");
-          navigate(`/list-estudantes`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao alterar o estudante.");
-          }
-        });
+      await updateEstudante({
+        id: idEstudante,
+        nome: nome,
+        curso: curso,
+        matricula: matricula
+      }).then((response) => {
+        notifySuccess("Estudante alterado com sucesso.");
+        navigate(`/list-estudantes`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+        } else {
+          notifyError("Erro ao alterar o estudante.");
+        }
+      });
+    
     } else {
       // Cadastro:
-      axios
-        .post("http://localhost:8080/api/estudantes", estudanteRequest)
-        .then((response) => {
-          notifySuccess("Estudante cadastrado com sucesso.");
-          navigate(`/list-estudantes`);
-        })
-        .catch((error) => {
-          if (error.response) {
-            notifyError(error.response.data.message);
-          } else {
-            notifyError("Erro ao cadastrar o estudante.");
-          }
-        });
+      await createEstudante({
+        nome: nome,
+        curso: curso,
+        matricula: matricula
+      })
+      .then((response) => {
+        notifySuccess("Estudante cadastrado com sucesso.");
+        navigate(`/list-estudantes`);
+      })
+      .catch((error) => {
+        if (error.response) {
+          notifyError(error.response.data.message);
+        } else {
+          notifyError("Erro ao cadastrar o estudante.");
+        }
+      })
     }
+    
   }
 
   return (
@@ -78,7 +81,7 @@ export default function FormEstudantes() {
 
       <div style={{ marginTop: "3%" }}>
         <Container textAlign="justified">
-          {idEstudante === undefined && (
+          {idEstudante === null && (
             <h2>
               <span style={{ color: "darkgray" }}>
                 Estudante &nbsp;
@@ -87,7 +90,7 @@ export default function FormEstudantes() {
               Cadastro
             </h2>
           )}
-          {idEstudante != undefined && (
+          {idEstudante !== null && (
             <h2>
               <span style={{ color: "darkgray" }}>
                 Estudante &nbsp;
@@ -95,7 +98,7 @@ export default function FormEstudantes() {
               </span>{" "}
               Alteração
             </h2>
-          )}
+      )}
 
           <Divider />
 
@@ -147,6 +150,7 @@ export default function FormEstudantes() {
                 color="blue"
                 floated="right"
                 onClick={() => salvar()}
+                
               >
                 <Icon name="save" />
                 Salvar
