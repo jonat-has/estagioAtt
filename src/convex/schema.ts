@@ -27,7 +27,8 @@ export default defineSchema({
         estudante: v.id("estudante"),
         orientador: v.id("orientador"),
         empresa: v.id("empresa"),
-        agente: v.id("agente"),
-        ativo: v.boolean()
+        agente: v.optional(v.id("agente")),
+        ativo: v.boolean(),
+        pdf: v.id("_storage")
       }),
 });

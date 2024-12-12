@@ -6,16 +6,17 @@ export const create = mutation({
         estudante: v.id("estudante"),
         orientador: v.id("orientador"),
         empresa: v.id("empresa"),
-        agente: v.id("agente"),
-        ativo: v.boolean() },
-       
-    handler: async (ctx, { agente, descricao, empresa,estudante,orientador, ativo }) =>  {
-    if (!agente || !descricao || !empresa || !estudante || !orientador) {
+        agente: v.optional(v.id("agente")),
+        ativo: v.boolean(),
+        pdf: v.id("_storage") },
+        
+    handler: async (ctx, { agente, descricao, empresa,estudante,orientador, ativo, pdf }) =>  {
+    if (!descricao || !empresa || !estudante || !orientador || !pdf) {
       throw new Error("Todos os campos são obrigatórios.");
     }
   
     // Insere o estagio na tabela
-    await ctx.db.insert("estagio", { agente, descricao, empresa, estudante,orientador, ativo });
+    await ctx.db.insert("estagio", { agente, descricao, empresa, estudante,orientador, ativo, pdf });
 },
 });
 
@@ -37,11 +38,12 @@ export const create = mutation({
         estudante: v.id("estudante"),
         orientador: v.id("orientador"),
         empresa: v.id("empresa"),
-        agente: v.id("agente"),
-        ativo: v.boolean() },
-    handler: async (ctx, { id, agente, descricao, empresa, estudante,orientador, ativo}) => {
+        agente: v.optional(v.id("agente")),
+        ativo: v.boolean(),
+        pdf: v.id("_storage")},
+    handler: async (ctx, { id, agente, descricao, empresa, estudante,orientador, ativo, pdf}) => {
 
-        await ctx.db.patch( id, { agente, descricao, empresa, estudante,orientador, ativo });
+        await ctx.db.patch( id, { agente, descricao, empresa, estudante,orientador, ativo, pdf });
 
         return "estagio atualizado"
     },
@@ -59,14 +61,15 @@ export const create = mutation({
       // Enriquecer os dados manualmente
       return Promise.all(
         estagios.map(async (estagio) => {
-          const agente = await ctx.db.get(estagio.agente);
+     
+          const agente = estagio.agente ? await ctx.db.get(estagio.agente) : null;
           const orientador = await ctx.db.get(estagio.orientador);
           const empresa = await ctx.db.get(estagio.empresa);
           const estudante = await ctx.db.get(estagio.estudante);
   
           return {
             ...estagio,
-            agente_nome: agente?.nome || null,
+            agente_nome: agente ? agente.nome : null,
             orientador_nome: orientador?.nome || null,
             empresa_nome: empresa?.nome || null,
             estudante_nome: estudante?.nome || null,
@@ -86,3 +89,16 @@ export const create = mutation({
         return estagio;
     }
   })
+
+export const generateUploadUrl = mutation(async (ctx) => {
+  return await ctx.storage.generateUploadUrl();
+});
+
+export const pdfLink = mutation({
+  args: { id: v.id("_storage") },
+  handler: async (ctx, { id }) => {
+    const pdf = await ctx.storage.getUrl(id);
+
+    return pdf
+  },
+})

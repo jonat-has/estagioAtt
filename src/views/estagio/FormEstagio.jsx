@@ -1,5 +1,5 @@
 
-import { React, useEffect, useState } from "react";
+import { React, useEffect, useRef, useState } from "react";
 import { Button, Container, Divider, Form, Icon } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
 import { Link, useLocation, useNavigate } from "react-router-dom";
@@ -25,6 +25,7 @@ export default function FormEstagios() {
   const [idOrientador, setIdOrientador] = useState();
   const [idEmpresa, setIdEmpresa] = useState();
   const [idAgente, setIdAgente] = useState();
+  const [link, setLink] = useState(null)
 
 
   const navigate = useNavigate();
@@ -37,61 +38,94 @@ export default function FormEstagios() {
       setIdOrientador(state.orientador);
       setIdEmpresa(state.empresa);
       setIdAgente(state.agente)
-      console.log(state)
+      setLink(state.pdf)
     }
 
   }, [getAgentes, getEmpresas, getEstudantes, getOrientadores, state]);
 
  
-  async function salvar() {
-    if (idEstagio !== null) {
-      // Alteração:
-      await updateEstagio({
-        id: idEstagio,
-        estudante: idEstudante,
-        orientador: idOrientador,
-        empresa: idEmpresa,
-        agente: idAgente,
-        descricao: descricao,
-        ativo: ativo
-
-      }).then((response) => {
-        notifySuccess("Estagio alterado com sucesso.");
-        navigate(`/list-estagios`);
-      })
-      .catch((error) => {
-        if (error.response) {
-          notifyError(error.response.data.message);
-          console.log(error)
-        } else {
-          notifyError("Erro ao alterar o Estagio.");
-        }
-      });
-    } else {
-      // Cadastro:
-
-      await createEstagio({
-        estudante: idEstudante,
-        orientador: idOrientador,
-        empresa: idEmpresa,
-        agente: idAgente,
-        descricao: descricao,
-        ativo: ativo
-      })
-      .then((response) => {
-        notifySuccess("Estagio cadastrado com sucesso.");
-        console.log(response)
-        navigate(`/list-estagios`);
-      })
-      .catch((error) => {
-        if (error.response) {
-          notifyError(error.response.data.message);
-        } else {
-          notifyError("Erro ao cadastrar o estagio.");
-        }
-      })
+  const generateUploadUrl = useMutation(api.estagio.generateUploadUrl);
+  
+    const fileInput = useRef(null);
+    const [selectedFile, setSelectedFile] = useState(null);
+  
+    async function handleSendPdf() {
+      if (!selectedFile) {
+        alert("Por favor, selecione um arquivo PDF.");
+        return null;
+      }
+  
+      try {
+        // Passo 1: Obter uma URL de upload de curta duração
+        const postUrl = await generateUploadUrl();
+  
+        // Passo 2: Enviar o arquivo para a URL
+        const result = await fetch(postUrl, {
+          method: "POST",
+          headers: { "Content-Type": selectedFile.type },
+          body: selectedFile,
+        });
+  
+        const { storageId } = await result.json();
+        return storageId;
+      } catch (error) {
+        console.error("Erro ao enviar o PDF:", error);
+        alert("Ocorreu um erro ao enviar o arquivo. Tente novamente.");
+        return null;
+      }
     }
-  }
+  
+    async function salvar(event) {
+      event.preventDefault();
+  
+      let storageId = link;
+  
+      if (selectedFile) {
+        // Se o arquivo foi selecionado, envie-o antes de salvar o estágio
+        storageId = await handleSendPdf();
+        console.log(storageId)
+        if (!storageId) return; // Se falhar no envio, não continua
+      }
+  
+      if (idEstagio !== null) {
+        // Alteração:
+        await updateEstagio({
+          id: idEstagio,
+          estudante: idEstudante,
+          orientador: idOrientador,
+          empresa: idEmpresa,
+          agente: idAgente,
+          descricao: descricao,
+          ativo: ativo,
+          pdf: storageId, // Atualizando o PDF
+        })
+        .then((response) => {
+          notifySuccess("Estágio alterado com sucesso.");
+          navigate(`/list-estagios`);
+        })
+        .catch((error) => {
+          notifyError(error.response ? error.response.data.message : "Erro ao alterar o Estágio.");
+        });
+      } else {
+        // Cadastro:
+        await createEstagio({
+          estudante: idEstudante,
+          orientador: idOrientador,
+          empresa: idEmpresa,
+          agente: idAgente,
+          descricao: descricao,
+          ativo: ativo,
+          pdf: storageId, // Usando o storageId do arquivo enviado
+        })
+        .then((response) => {
+          notifySuccess("Estágio cadastrado com sucesso.");
+          navigate(`/list-estagios`);
+        })
+        .catch((error) => {
+          notifyError(error.response ? error.response.data.message : "Erro ao cadastrar o Estágio.");
+        });
+      }
+    }
 
   return (
     <div>
@@ -200,6 +234,14 @@ export default function FormEstagios() {
               </Form.Group>
             </Form>
 
+            <input
+                type="file"
+                accept="application/pdf"
+                ref={fileInput}
+                onChange={(event) => setSelectedFile(event.target.files[0])}
+                disabled={selectedFile !== null}
+              />
+
             <div style={{ marginTop: "4%" }}>
               <Button
                 type="button"
@@ -222,7 +264,7 @@ export default function FormEstagios() {
                 labelPosition="left"
                 color="blue"
                 floated="right"
-                onClick={() => salvar()}
+                onClick={(event) => salvar(event)}
               >
                 <Icon name="save" />
                 Salvar

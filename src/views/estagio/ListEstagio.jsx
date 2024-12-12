@@ -19,17 +19,27 @@ import { api } from "../../convex/_generated/api";
 export default function ListEstagios() {
   const getEstagios = useQuery(api.estagio.get);
   const removeEstagios = useMutation(api.estagio.remove);
+  const pdf = useMutation(api.estagio.pdfLink);
 
   const [openModal, setOpenModal] = useState(false);
   const [idRemover, setIdRemover] = useState();
   const [descricao, setDescricao] = useState("");
   const [idEstudante, setIdEstudante] = useState("");
   const [menuFiltro, setMenuFiltro] = useState(false);
+  const [links, setLinks] = useState({})
 
   useEffect(() => {
-    console.log(getEstagios);
-  });
-
+    if (getEstagios) {
+      getEstagios.forEach(async (estagio) => {
+        const link = await pdf({id: estagio.pdf}); // Chama a função para gerar o link
+        setLinks((prevLinks) => ({
+          ...prevLinks,
+          [estagio._id]: link, // Atualiza o estado com o link correspondente ao id
+        }));
+      });
+    }
+  }, [getEstagios, pdf]);
+  
   function handleMenuFiltro() {
     setMenuFiltro(!menuFiltro);
   }
@@ -65,7 +75,6 @@ export default function ListEstagios() {
     });
   }
   
-
 
   return (
     <div>
@@ -138,6 +147,7 @@ export default function ListEstagios() {
                   <Table.HeaderCell>Empresa</Table.HeaderCell>
                   <Table.HeaderCell>Agente de Integração</Table.HeaderCell>
                   <Table.HeaderCell>Ativo</Table.HeaderCell>
+                  <Table.HeaderCell>PDF</Table.HeaderCell>
                   <Table.HeaderCell textAlign="center" width={2}>
                     Ações
                   </Table.HeaderCell>
@@ -154,6 +164,15 @@ export default function ListEstagios() {
                       <Table.Cell>{e.empresa_nome || "N/A"}</Table.Cell>
                       <Table.Cell>{e.agente_nome || "N/A"}</Table.Cell>
                       <Table.Cell>{e.ativo ? "Ativo" : "Inativo"}</Table.Cell>
+                      <Table.Cell>
+                              {links[e._id] ? (
+                          <a href={links[e._id]} target="_blank" rel="noopener noreferrer">
+                            Visualizar PDF
+                          </a>
+                        ) : (
+                          'Carregando...'
+                        )}
+                      </Table.Cell>
                       <Table.Cell textAlign="center">
                         <Button
                           inverted
