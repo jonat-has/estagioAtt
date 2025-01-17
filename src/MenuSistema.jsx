@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, redirect, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu } from "semantic-ui-react";
 import { getAuth, signOut } from "firebase/auth";
 
@@ -14,7 +14,7 @@ export default function MenuSistema(props) {
         // Recupera o usuário e a role do localStorage
         const storedUser = localStorage.getItem("user");
         const storedRole = localStorage.getItem("role");
-        
+
         if (storedUser && storedRole) {
             setUser(JSON.parse(storedUser)); // Carrega o usuário
             setRole(storedRole); // Carrega a role (V ou E)
@@ -22,79 +22,52 @@ export default function MenuSistema(props) {
     }, []);
 
     const handleLogout = () => {
-
-        signOut(auth).then(() => {
-            localStorage.removeItem("user");
-            localStorage.removeItem("role");
-            setUser(null);
-            setRole("");
-            navigate(`/`);
-            window.location.reload();
-        }).catch((error) => {
-
-        });
+        signOut(auth)
+            .then(() => {
+                localStorage.removeItem("user");
+                localStorage.removeItem("role");
+                setUser(null);
+                setRole("");
+                navigate(`/`);
+                window.location.reload();
+            })
+            .catch((error) => {
+                console.error("Erro ao desconectar:", error);
+            });
     };
 
-    const isEditor = role === "E";
+    const visualizadorPages = [
+        { name: "Estudantes", path: "list-estudantes" },
+        { name: "Orientadores", path: "list-orientadores" },
+        { name: "Agentes", path: "list-agentes" },
+        { name: "Empresas", path: "list-empresas" },
+        { name: "Estágios", path: "list-estagios" },
+    ];
 
     return (
         <Menu inverted>
-            {/* Páginas sempre visíveis */}
+            {/* Página inicial */}
             <Menu.Item
-                name="home"
+                name="Home"
                 active={props.tela === "home"}
                 as={Link}
                 to="/"
             />
-            {["list-estudantes", "list-orientadores", "list-agentes", "list-empresas", "list-estagios"].map((path) => (
+
+            {/* Páginas de visualização */}
+            {visualizadorPages.map((page) => (
                 <Menu.Item
-                    key={path}
-                    name={path}
-                    active={props.tela === path}
+                    key={page.path}
+                    name={page.name}
+                    active={props.tela === page.path}
                     as={Link}
-                    to={`/${path}`}
+                    to={`/${page.path}`}
                 />
             ))}
 
-            {/* Páginas exclusivas para editores */}
-            {isEditor && (
-                <>
-                    <Menu.Item
-                        name="form-estudantes"
-                        active={props.tela === "form-estudantes"}
-                        as={Link}
-                        to="/form-estudantes"
-                    />
-                    <Menu.Item
-                        name="form-orientadores"
-                        active={props.tela === "form-orientadores"}
-                        as={Link}
-                        to="/form-orientadores"
-                    />
-                    <Menu.Item
-                        name="form-agentes"
-                        active={props.tela === "form-agentes"}
-                        as={Link}
-                        to="/form-agentes"
-                    />
-                    <Menu.Item
-                        name="form-empresas"
-                        active={props.tela === "form-empresas"}
-                        as={Link}
-                        to="/form-empresas"
-                    />
-                    <Menu.Item
-                        name="form-estagios"
-                        active={props.tela === "form-estagios"}
-                        as={Link}
-                        to="/form-estagios"
-                    />
-                </>
-            )}
-
-            {/* Página sobre (sempre visível) */}
+            {/* Página sobre */}
             <Menu.Item
-                name="sobre"
+                name="Sobre"
                 active={props.tela === "sobre"}
                 as={Link}
                 to="/sobre"
@@ -105,7 +78,7 @@ export default function MenuSistema(props) {
                 {user ? (
                     <>
                         <Menu.Item>
-                            Olá {user.displayName}
+                            Olá {user.displayName} - Perfil {role === "V" ? "Visualizador" : "Editor"}
                         </Menu.Item>
                         <Menu.Item
                             name="logout"
