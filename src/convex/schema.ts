@@ -31,4 +31,9 @@ export default defineSchema({
         ativo: v.boolean(),
         pdf: v.id("_storage")
       }),
+    users: defineTable({
+      firebaseId: v.string(),
+      role: v.string()
+
+    })
 });

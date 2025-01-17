@@ -18,6 +18,7 @@ import type * as empresa from "../empresa.js";
 import type * as estagio from "../estagio.js";
 import type * as estudante from "../estudante.js";
 import type * as orientador from "../orientador.js";
+import type * as users from "../users.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -33,6 +34,7 @@ declare const fullApi: ApiFromModules<{
   estagio: typeof estagio;
   estudante: typeof estudante;
   orientador: typeof orientador;
+  users: typeof users;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

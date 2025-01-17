@@ -7,7 +7,6 @@ import { initializeApp } from "firebase/app";
 
 function App() {
 
-
   const firebaseConfig = {
     apiKey: "AIzaSyBNXd-9v4umxOw2L4V82u_WnpyQbJBs9WU",
     authDomain: "att-topicos.firebaseapp.com",
@@ -16,8 +15,7 @@ function App() {
     messagingSenderId: "909672474227",
     appId: "1:909672474227:web:eb45d2bfb22a89d8532c06"
   };
-
-
+  
   const app = initializeApp(firebaseConfig);
 
   return (

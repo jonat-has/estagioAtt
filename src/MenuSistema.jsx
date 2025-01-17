@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, redirect, useNavigate } from "react-router-dom";
 import { Menu } from "semantic-ui-react";
+import { getAuth, signOut } from "firebase/auth";
 
 export default function MenuSistema(props) {
     const [user, setUser] = useState(null); // Estado para armazenar o usuário logado
     const [role, setRole] = useState(""); // Estado para armazenar a role do usuário
+
+    const auth = getAuth();
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Recupera o usuário e a role do localStorage
@@ -18,11 +22,17 @@ export default function MenuSistema(props) {
     }, []);
 
     const handleLogout = () => {
-        // Remove os dados do localStorage e atualiza o estado
-        localStorage.removeItem("user");
-        localStorage.removeItem("role");
-        setUser(null);
-        setRole("");
+
+        signOut(auth).then(() => {
+            localStorage.removeItem("user");
+            localStorage.removeItem("role");
+            setUser(null);
+            setRole("");
+            navigate(`/`);
+            window.location.reload();
+        }).catch((error) => {
+
+        });
     };
 
     const isEditor = role === "E";
@@ -95,7 +105,7 @@ export default function MenuSistema(props) {
                 {user ? (
                     <>
                         <Menu.Item>
-                            Olá {user.name} - Perfil {role === "V" ? "Visualizador" : "Editor"}
+                            Olá {user.displayName}
                         </Menu.Item>
                         <Menu.Item
                             name="logout"
