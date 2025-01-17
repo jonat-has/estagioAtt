@@ -16,7 +16,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   if (allowedRoles && !allowedRoles.includes(role)) {
     // Role do usuário não está autorizada
-    notifyError("Você não tem permissão para acessar esta página.");
+    notifyError(" permissão para acessar esta página.");
     navigate("/");
     return null;
   }
