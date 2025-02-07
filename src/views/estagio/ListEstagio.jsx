@@ -9,12 +9,16 @@ import {
   Icon,
   Menu,
   Modal,
+  ModalActions,
+  ModalContent,
   Segment,
   Table,
 } from "semantic-ui-react";
 import MenuSistema from "../../MenuSistema";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 
 export default function ListEstagios() {
   const getEstagios = useQuery(api.estagio.get);
@@ -27,8 +31,16 @@ export default function ListEstagios() {
   const [idEstudante, setIdEstudante] = useState("");
   const [menuFiltro, setMenuFiltro] = useState(false);
   const [links, setLinks] = useState({})
+  const [role, setRole] = useState() 
+  const [paymentModal, setPaymentModal] = useState(false)
+
 
   useEffect(() => {
+    initMercadoPago('APP_USR-5484e18f-d23f-4e0c-a17b-d49ee71eed69');
+
+    let role = localStorage.getItem("role")
+    setRole(role)
+
     if (getEstagios) {
       getEstagios.forEach(async (estagio) => {
         const link = await pdf({id: estagio.pdf}); // Chama a função para gerar o link
@@ -73,8 +85,7 @@ export default function ListEstagios() {
   
       return matchesDescricao && matchesEstudante;
     });
-  }
-  
+  }  
 
   return (
     <div>
@@ -97,8 +108,52 @@ export default function ListEstagios() {
               </Menu.Item>
             </Menu>
 
+            {role !== "ep" ?
+            <>
             <Button
-              label="Novo"
+              label="Novo" 
+              circular
+              color="orange"
+              icon="lock"
+              floated="right"
+              onClick={() => setPaymentModal(true)}
+            />
+
+            <Modal
+                  onClose={() => setPaymentModal(false)}
+                  onOpen={() => setPaymentModal(true)}
+                  open={paymentModal}
+                  size='small'
+                >
+                  <Header icon>
+                    <Icon name='Lock' />
+                    Conteudo Pago
+                  </Header>
+                  <ModalContent>
+                    <p>
+                      Para acessar o fomulario de adicionar estagio deve ser pago um valor unico de R$0,05
+                    </p>
+                  </ModalContent>
+                  <ModalActions>
+                  <Wallet 
+                  initialization={{ preferenceId: '2253937165-e60546bc-1ab7-44b1-80b9-1d1909c772a4', redirectMode: 'blank' }} 
+                  customization={{ texts: { valueProp: 'smart_option' }}}
+                  onReady={() => console.log("Widget carregado")}
+                  onSubmit={ (response) => {
+                    console.log("Pagamento enviado:", response);
+                  
+                  }}
+                />
+                    <Button basic color='red'  onClick={() => setPaymentModal(false)}>
+                      <Icon name='remove' /> Fechar
+                    </Button>
+                  </ModalActions>
+                </Modal>
+          </>
+            : 
+
+            <Button
+              label="Novo"  
               circular
               color="orange"
               icon="clipboard outline"
@@ -107,6 +162,8 @@ export default function ListEstagios() {
               to="/form-estagios"
             />
 
+            }
+            
             {menuFiltro ? (
               <Segment>
                 <Form className="form-filtros">

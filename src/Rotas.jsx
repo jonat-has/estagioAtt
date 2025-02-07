@@ -99,7 +99,7 @@ function Rotas() {
         <Route
           path="form-estagios"
           element={
-            <ProtectedRoute allowedRoles={["E"]}>
+            <ProtectedRoute allowedRoles={["EP"]}>
               <FormEstagios />
             </ProtectedRoute>
           }
