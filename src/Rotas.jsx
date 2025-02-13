@@ -15,6 +15,8 @@ import FormEstagios from "./views/estagio/FormEstagio.jsx";
 import Sobre from "./views/sobre/Sobre.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 
+import { PagamentoSucesso, PagamentoErro, PagamentoPendente } from "./views/pagamento/PaginasPagamento.jsx"; 
+
 function Rotas() {
   return (
     <>
@@ -107,6 +109,11 @@ function Rotas() {
 
         {/* Página Sobre (Acesso Livre) */}
         <Route path="sobre" element={<Sobre />} />
+
+        {/* Páginas de Pagamento */}
+        <Route path="sucesso" element={<PagamentoSucesso />} />
+        <Route path="erro" element={<PagamentoErro />} />
+        <Route path="pending" element={<PagamentoPendente />} />
       </Routes>
     </>
   );
